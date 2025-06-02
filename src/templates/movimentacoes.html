@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+{% block title %}Movimentações de Estoque{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Registrar Movimentação</h5>
+      </div>
+      <div class="card-body">
+        <form method="POST" action="{{ url_for('movimentacoes.registrar') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          
+          <div class="row">
+            <div class="col-md-4 mb-3">
+              <label for="codigo" class="form-label">Código do Produto</label>
+              <input type="text" class="form-control" id="codigo" name="codigo" 
+                     placeholder="Digite o código" required>
+            </div>
+            
+            <div class="col-md-4 mb-3">
+              <label for="tipo" class="form-label">Tipo de Movimentação</label>
+              <select class="form-select" id="tipo" name="tipo" required>
+                <option value="" selected disabled>Selecione o tipo</option>
+                <option value="Entrada">Entrada</option>
+                <option value="Saída">Saída</option>
+              </select>
+            </div>
+            
+            <div class="col-md-4 mb-3">
+              <label for="quantidade" class="form-label">Quantidade</label>
+              <input type="number" class="form-control" id="quantidade" name="quantidade" 
+                     placeholder="Digite a quantidade" min="1" required>
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label for="observacao" class="form-label">Observação</label>
+            <input type="text" class="form-control" id="observacao" name="observacao" 
+                   placeholder="Digite uma observação (opcional)">
+          </div>
+          
+          <div class="d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-plus-circle me-1" viewBox="0 0 16 16">
+                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                <path d="M8 4a.5.5 0 0 1 .5.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3A.5.5 0 0 1 8 4z"/>
+              </svg>
+              Registrar Movimentação
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0">Filtros</h5>
+      </div>
+      <div class="card-body">
+        <form method="GET" action="{{ url_for('movimentacoes.listar') }}" class="row">
+          <div class="col-md-3 mb-3">
+            <label for="filtro_codigo" class="form-label">Código</label>
+            <input type="text" class="form-control" id="filtro_codigo" name="filtro_codigo" 
+                   value="{{ request.args.get('filtro_codigo', '') }}" placeholder="Filtrar por código">
+          </div>
+          
+          <div class="col-md-3 mb-3">
+            <label for="filtro_tipo" class="form-label">Tipo</label>
+            <select class="form-select" id="filtro_tipo" name="filtro_tipo">
+              <option value="">Todos</option>
+              <option value="Entrada" {% if request.args.get('filtro_tipo') == 'Entrada' %}selected{% endif %}>Entrada</option>
+              <option value="Saída" {% if request.args.get('filtro_tipo') == 'Saída' %}selected{% endif %}>Saída</option>
+            </select>
+          </div>
+          
+          <div class="col-md-3 mb-3">
+            <label for="filtro_data_inicio" class="form-label">Data Início</label>
+            <input type="date" class="form-control" id="filtro_data_inicio" name="filtro_data_inicio" 
+                   value="{{ request.args.get('filtro_data_inicio', '') }}">
+          </div>
+          
+          <div class="col-md-3 mb-3">
+            <label for="filtro_data_fim" class="form-label">Data Fim</label>
+            <input type="date" class="form-control" id="filtro_data_fim" name="filtro_data_fim" 
+                   value="{{ request.args.get('filtro_data_fim', '') }}">
+          </div>
+          
+          <div class="col-12 d-flex justify-content-end">
+            <button type="submit" class="btn btn-primary">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-filter me-1" viewBox="0 0 16 16">
+                <path d="M6 10.5a.5.5 0 0 1 .5-.5h3a.5.5 0 0 1 0 1h-3a.5.5 0 0 1-.5-.5zm-2-3a.5.5 0 0 1 .5-.5h7a.5.5 0 0 1 0 1h-7a.5.5 0 0 1-.5-.5zm-2-3a.5.5 0 0 1 .5-.5h11a.5.5 0 0 1 0 1h-11a.5.5 0 0 1-.5-.5z"/>
+              </svg>
+              Filtrar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0">Histórico de Movimentações</h5>
+        <button class="btn btn-sm btn-outline-secondary" onclick="printTable()">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-printer me-1" viewBox="0 0 16 16">
+            <path d="M2.5 8a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+            <path d="M5 1a2 2 0 0 0-2 2v2H2a2 2 0 0 0-2 2v3a2 2 0 0 0 2 2h1v1a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2v-1h1a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-1V3a2 2 0 0 0-2-2H5zM4 3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2H4V3zm1 5a2 2 0 0 0-2 2v1H2a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v-1a2 2 0 0 0-2-2H5zm7 2v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1z"/>
+          </svg>
+          Imprimir
+        </button>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover table-striped mb-0" id="movimentacoesTable">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Código</th>
+                <th>Tipo</th>
+                <th>Quantidade</th>
+                <th>Data</th>
+                <th>Observação</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for mov in movimentacoes %}
+              <tr>
+                <td>{{ mov.id }}</td>
+                <td>{{ mov.codigo }}</td>
+                <td>
+                  <span class="badge {% if mov.tipo == 'Entrada' %}bg-success{% else %}bg-danger{% endif %}">
+                    {{ mov.tipo }}
+                  </span>
+                </td>
+                <td>{{ mov.quantidade }}</td>
+                <td>{{ mov.data }}</td>
+                <td>{{ mov.observacao or '-' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card-footer">
+        <div class="pagination-container" data-table="movimentacoesTable" data-items-per-page="10"></div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function printTable() {
+  const printWindow = window.open('', '', 'height=600,width=800');
+  printWindow.document.write('<html><head><title>Histórico de Movimentações</title>');
+  printWindow.document.write('<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">');
+  printWindow.document.write('<style>body { font-family: Arial, sans-serif; padding: 20px; }</style>');
+  printWindow.document.write('</head><body>');
+  printWindow.document.write('<h2 class="text-center mb-4">Histórico de Movimentações</h2>');
+  
+  // Adicionar filtros aplicados
+  const filtros = [];
+  if (document.getElementById('filtro_codigo').value) {
+    filtros.push(`Código: ${document.getElementById('filtro_codigo').value}`);
+  }
+  if (document.getElementById('filtro_tipo').value) {
+    filtros.push(`Tipo: ${document.getElementById('filtro_tipo').value}`);
+  }
+  if (document.getElementById('filtro_data_inicio').value) {
+    filtros.push(`Data Início: ${document.getElementById('filtro_data_inicio').value}`);
+  }
+  if (document.getElementById('filtro_data_fim').value) {
+    filtros.push(`Data Fim: ${document.getElementById('filtro_data_fim').value}`);
+  }
+  
+  if (filtros.length > 0) {
+    printWindow.document.write('<p class="mb-3"><strong>Filtros aplicados:</strong> ' + filtros.join(', ') + '</p>');
+  }
+  
+  // Copiar a tabela
+  const table = document.getElementById('movimentacoesTable').cloneNode(true);
+  
+  // Remover a coluna de ações se existir
+  const actionCells = table.querySelectorAll('th:last-child, td:last-child');
+  if (actionCells.length > 0 && actionCells[0].textContent.trim().toLowerCase() === 'ações') {
+    actionCells.forEach(cell => cell.remove());
+  }
+  
+  // Adicionar classes para estilização
+  table.classList.add('table', 'table-striped', 'table-bordered');
+  
+  printWindow.document.write('<div class="table-responsive">');
+  printWindow.document.write(table.outerHTML);
+  printWindow.document.write('</div>');
+  
+  // Adicionar rodapé com data de impressão
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('pt-BR');
+  const timeStr = now.toLocaleTimeString('pt-BR');
+  printWindow.document.write(`<p class="text-end mt-4">Impresso em: ${dateStr} às ${timeStr}</p>`);
+  
+  printWindow.document.write('</body></html>');
+  printWindow.document.close();
+  
+  // Aguardar carregamento do CSS
+  setTimeout(() => {
+    printWindow.print();
+  }, 500);
+}
+</script>
+{% endblock %}
